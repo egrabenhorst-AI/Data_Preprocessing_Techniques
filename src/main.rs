@@ -12,6 +12,8 @@ fn main() {
                 Ok(dataset) => {
                     // The dataset is ready for processing
                     println!("Loaded {} records", dataset.len());
+                    let parsed_data = filter_and_convert(&dataset);
+                    println!("Filtered and converted data: {:?}", parsed_data);
                 }
                 Err(error) => {
                     eprintln!("Error loading dataset: {}", error);
@@ -57,9 +59,25 @@ fn load_dataset(csv_data: &str) -> Result<Vec<SalaryRecord>, Box<dyn Error>> {
             );
         }
     }
-    println!("{:?}", records);
     Ok(records)
 }
+
+
+fn filter_and_convert(dataset: &[SalaryRecord]) -> Vec<(i32, String, f64)> {
+    dataset
+    .iter()
+    .filter(|record| record.experience_level == "SE")
+    .map(|record| {
+        let salary_in_usd_rounded = record.salary_in_usd.round();
+        (
+        record.work_year,
+        record.job_title.clone(),
+        salary_in_usd_rounded,
+        )
+    })
+    .collect()
+}
+
 
 #[derive(Debug)]
 struct SalaryRecord {
