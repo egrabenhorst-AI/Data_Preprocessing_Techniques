@@ -1,0 +1,12 @@
+[package]
+name = "my_statistics_project"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ndarray = "0.15"
+statrs = "0.14"
+plotly = "0.6"
+csv = "1.1"
+reqwest = { version = "0.11", features = ["blocking"] }
+serde = { version = "1.0", features = ["derive"] }
