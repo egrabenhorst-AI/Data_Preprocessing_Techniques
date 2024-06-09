@@ -14,6 +14,9 @@ fn main() {
                     println!("Loaded {} records", dataset.len());
                     let parsed_data = filter_and_convert(&dataset);
                     println!("Filtered and converted data: {:?}", parsed_data);
+                    let salaries = get_salaries(&dataset);
+                    let mean_salary = calculate_mean(&salaries);
+                    println!("Mean salary: {:.2}", mean_salary);
                 }
                 Err(error) => {
                     eprintln!("Error loading dataset: {}", error);
@@ -77,6 +80,19 @@ fn filter_and_convert(dataset: &[SalaryRecord]) -> Vec<(i32, String, f64)> {
     })
     .collect()
 }
+
+
+fn get_salaries(dataset: &[SalaryRecord]) -> Vec<f64> {
+    dataset
+    .iter()
+    .map(|record| {record.salary_in_usd})
+    .collect()
+}
+
+fn calculate_mean(data: &[f64]) -> f64 {
+    let sum: f64 = data.iter().sum();
+    sum / data.len() as f64
+   }
 
 
 #[derive(Debug)]
