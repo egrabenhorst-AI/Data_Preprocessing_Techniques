@@ -19,6 +19,18 @@ fn main() {
                     println!("Mean salary: {:.2}", mean_salary.unwrap());
                     let median_salary = calculate_median(&mut salaries);
                     println!("Median salary: {:.2}", median_salary);
+                    let standardized_salaries = standardize_salaries(&dataset);
+                    println!("Standardized salaries: {:?}", standardized_salaries);
+                    let job_title_mapping = create_job_title_mapping(&dataset);
+                    println!("Job title mapping: {:?}", job_title_mapping);
+                    let one_hot_encoded_job_titles =
+                        one_hot_encode_job_titles(&dataset, &job_title_mapping);
+                    println!(
+                        "One-hot encoded job titles: {:?}",
+                        one_hot_encoded_job_titles
+                    );
+                    let us_based_feature = create_us_based_feature(&dataset);
+                    println!("US-based feature: {:?}", us_based_feature);
                 }
                 Err(error) => {
                     eprintln!("Error loading dataset: {}", error);
@@ -141,6 +153,48 @@ fn standardize_salaries(dataset: &[SalaryRecord]) -> Vec<f64> {
     dataset
         .iter()
         .map(|record| (record.salary_in_usd - mean_salary.unwrap()) / std_dev_salary.unwrap())
+        .collect()
+}
+
+use std::collections::HashMap;
+use std::collections::HashSet;
+fn create_job_title_mapping(dataset: &[SalaryRecord]) -> HashMap<String, usize> {
+    let mut job_title_set: HashSet<String> = dataset
+        .iter()
+        .map(|record| record.job_title.clone())
+        .collect();
+    let mut job_title_mapping: HashMap<String, usize> = HashMap::new();
+    for (index, job_title) in job_title_set.drain().enumerate() {
+        job_title_mapping.insert(job_title, index);
+    }
+    job_title_mapping
+}
+
+fn one_hot_encode_job_titles(
+    dataset: &[SalaryRecord],
+    mapping: &HashMap<String, usize>,
+) -> Vec<Vec<u8>> {
+    dataset
+        .iter()
+        .map(|record| {
+            let mut encoding = vec![0u8; mapping.len()];
+            let index = mapping[&record.job_title];
+            encoding[index] = 1;
+            encoding
+        })
+        .collect()
+}
+
+fn create_us_based_feature(dataset: &[SalaryRecord]) -> Vec<u8> {
+    dataset
+        .iter()
+        .map(|record| {
+            if record.company_location == "US" {
+                1u8
+            } else {
+                0u8
+            }
+        })
         .collect()
 }
 
