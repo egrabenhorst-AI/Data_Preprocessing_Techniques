@@ -15,8 +15,8 @@ fn main() {
                     let parsed_data = filter_and_convert(&dataset);
                     println!("Filtered and converted data: {:?}", parsed_data);
                     let mut salaries = get_salaries(&dataset);
-                    let mean_salary = calculate_mean(&salaries);
-                    println!("Mean salary: {:.2}", mean_salary);
+                    let mean_salary = mean(&salaries);
+                    println!("Mean salary: {:.2}", mean_salary.unwrap());
                     let median_salary = calculate_median(&mut salaries);
                     println!("Median salary: {:.2}", median_salary);
                 }
@@ -47,67 +47,102 @@ fn load_dataset(csv_data: &str) -> Result<Vec<SalaryRecord>, Box<dyn Error>> {
     for item in &items[1..] {
         let item_elements: Vec<&str> = item.split(",").collect();
         if item_elements.len() > 1 {
-            records.push(
-                SalaryRecord {
-                    work_year: item_elements[0].to_string().parse::<i32>()?,
-                    experience_level: item_elements[1].to_string(),
-                    employment_type: item_elements[2].to_string(),
-                    job_title: item_elements[3].to_string(),
-                    salary: item_elements[4].to_string().parse::<f64>()?,
-                    salary_currency: item_elements[5].to_string(),
-                    salary_in_usd: item_elements[6].to_string().parse::<f64>()?,
-                    employee_residence: item_elements[7].to_string(),
-                    remote_ratio:  item_elements[8].to_string().parse::<f64>()?,
-                    company_location: item_elements[9].to_string(),
-                    company_size: item_elements[10].to_string(),
-                }
-            );
+            records.push(SalaryRecord {
+                work_year: item_elements[0].to_string().parse::<i32>()?,
+                experience_level: item_elements[1].to_string(),
+                employment_type: item_elements[2].to_string(),
+                job_title: item_elements[3].to_string(),
+                salary: item_elements[4].to_string().parse::<f64>()?,
+                salary_currency: item_elements[5].to_string(),
+                salary_in_usd: item_elements[6].to_string().parse::<f64>()?,
+                employee_residence: item_elements[7].to_string(),
+                remote_ratio: item_elements[8].to_string().parse::<f64>()?,
+                company_location: item_elements[9].to_string(),
+                company_size: item_elements[10].to_string(),
+            });
         }
     }
     Ok(records)
 }
 
-
 fn filter_and_convert(dataset: &[SalaryRecord]) -> Vec<(i32, String, f64)> {
     dataset
-    .iter()
-    .filter(|record| record.experience_level == "SE")
-    .map(|record| {
-        let salary_in_usd_rounded = record.salary_in_usd.round();
-        (
-        record.work_year,
-        record.job_title.clone(),
-        salary_in_usd_rounded,
-        )
-    })
-    .collect()
+        .iter()
+        .filter(|record| record.experience_level == "SE")
+        .map(|record| {
+            let salary_in_usd_rounded = record.salary_in_usd.round();
+            (
+                record.work_year,
+                record.job_title.clone(),
+                salary_in_usd_rounded,
+            )
+        })
+        .collect()
 }
-
 
 fn get_salaries(dataset: &[SalaryRecord]) -> Vec<f64> {
-    dataset
-    .iter()
-    .map(|record| {record.salary_in_usd})
-    .collect()
+    dataset.iter().map(|record| record.salary_in_usd).collect()
 }
 
-fn calculate_mean(data: &[f64]) -> f64 {
-    let sum: f64 = data.iter().sum();
-    sum / data.len() as f64
+fn mean(data: &[f64]) -> Option<f64> {
+    let sum = data.iter().sum::<f64>() as f64;
+    let count = data.len();
+
+    match count {
+        positive if positive > 0 => Some(sum / count as f64),
+        _ => None,
+    }
 }
 
 fn calculate_median(data: &mut Vec<f64>) -> f64 {
     data.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
     let len = data.len();
     if len % 2 == 0 {
-    let mid1 = data[(len / 2) - 1];
-    let mid2 = data[len / 2];
-    (mid1 + mid2) / 2.0
+        let mid1 = data[(len / 2) - 1];
+        let mid2 = data[len / 2];
+        (mid1 + mid2) / 2.0
     } else {
-    data[len / 2]
+        data[len / 2]
     }
 }
 
+fn std_deviation(data: &[f64]) -> Option<f64> {
+    match (mean(data), data.len()) {
+        (Some(data_mean), count) if count > 0 => {
+            let variance = data
+                .iter()
+                .map(|value| {
+                    let diff = data_mean - (*value as f64);
+
+                    diff * diff
+                })
+                .sum::<f64>()
+                / count as f64;
+
+            Some(variance.sqrt())
+        }
+        _ => None,
+    }
+}
+
+fn standardize_salaries(dataset: &[SalaryRecord]) -> Vec<f64> {
+    let mean_salary = mean(
+        &dataset
+            .iter()
+            .map(|record| record.salary_in_usd)
+            .collect::<Vec<f64>>(),
+    );
+    let std_dev_salary = std_deviation(
+        &dataset
+            .iter()
+            .map(|record| record.salary_in_usd)
+            .collect::<Vec<f64>>(),
+    );
+    dataset
+        .iter()
+        .map(|record| (record.salary_in_usd - mean_salary.unwrap()) / std_dev_salary.unwrap())
+        .collect()
+}
 
 #[derive(Debug)]
 struct SalaryRecord {
