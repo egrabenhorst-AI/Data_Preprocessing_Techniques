@@ -92,7 +92,20 @@ fn get_salaries(dataset: &[SalaryRecord]) -> Vec<f64> {
 fn calculate_mean(data: &[f64]) -> f64 {
     let sum: f64 = data.iter().sum();
     sum / data.len() as f64
-   }
+}
+
+
+fn calculate_median(data: &mut Vec<f64>) -> f64 {
+    data.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+    let len = data.len();
+    if len % 2 == 0 {
+    let mid1 = data[(len / 2) - 1];
+    let mid2 = data[len / 2];
+    (mid1 + mid2) / 2.0
+    } else {
+    data[len / 2]
+    }
+}
 
 
 #[derive(Debug)]
