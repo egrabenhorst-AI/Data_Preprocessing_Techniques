@@ -17,20 +17,22 @@ fn main() {
                     let mut salaries = get_salaries(&dataset);
                     let mean_salary = mean(&salaries);
                     println!("Mean salary: {:.2}", mean_salary.unwrap());
-                    let median_salary = calculate_median(&mut salaries);
-                    println!("Median salary: {:.2}", median_salary);
-                    let standardized_salaries = standardize_salaries(&dataset);
-                    println!("Standardized salaries: {:?}", standardized_salaries);
-                    let job_title_mapping = create_job_title_mapping(&dataset);
-                    println!("Job title mapping: {:?}", job_title_mapping);
-                    let one_hot_encoded_job_titles =
-                        one_hot_encode_job_titles(&dataset, &job_title_mapping);
-                    println!(
-                        "One-hot encoded job titles: {:?}",
-                        one_hot_encoded_job_titles
-                    );
-                    let us_based_feature = create_us_based_feature(&dataset);
-                    println!("US-based feature: {:?}", us_based_feature);
+                    let median_salary = median(&mut salaries);
+                    println!("Median salary: {:.2}", median_salary.unwrap());
+                    // let mode_salary = mode(&salaries);
+                    // println!("Mode salary: {:.2}", mode_salary.unwrap());
+                    // let standardized_salaries = standardize_salaries(&dataset);
+                    // println!("Standardized salaries: {:?}", standardized_salaries);
+                    // let job_title_mapping = create_job_title_mapping(&dataset);
+                    // println!("Job title mapping: {:?}", job_title_mapping);
+                    // let one_hot_encoded_job_titles =
+                    //     one_hot_encode_job_titles(&dataset, &job_title_mapping);
+                    // println!(
+                    //     "One-hot encoded job titles: {:?}",
+                    //     one_hot_encoded_job_titles
+                    // );
+                    //let us_based_feature = create_us_based_feature(&dataset);
+                    //println!("US-based feature: {:?}", us_based_feature);
                 }
                 Err(error) => {
                     eprintln!("Error loading dataset: {}", error);
@@ -106,35 +108,56 @@ fn mean(data: &[f64]) -> Option<f64> {
     }
 }
 
-fn calculate_median(data: &mut Vec<f64>) -> f64 {
+fn median(data: &mut [f64]) -> Option<f64> {
     data.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
     let len = data.len();
     if len % 2 == 0 {
         let mid1 = data[(len / 2) - 1];
         let mid2 = data[len / 2];
-        (mid1 + mid2) / 2.0
+        Some((mid1 + mid2) / 2.0)
     } else {
-        data[len / 2]
+        Some(data[len / 2])
     }
 }
 
+// fn mode(data: &[f64]) -> Option<f64> {
+//     use std::collections::HashMap;
+//     let frequencies = data.iter().fold(HashMap::new(), |mut freqs, value| {
+//         *freqs.entry(value).or_insert(0) += 1;
+//         freqs
+//     });
+
+//     frequencies
+//         .into_iter()
+//         .max_by_key(|&(_, count)| count)
+//         .map(|(value, _)| *value)
+// }
+
+fn range(data: &[f64]) -> f64 {
+    let max_value = data
+        .iter()
+        .cloned()
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap();
+    let min_value = data
+        .iter()
+        .cloned()
+        .min_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap();
+    max_value - min_value
+}
+
+fn variance(data: &[f64]) -> f64 {
+    let mean_value = mean(data).unwrap();
+    let squared_diffs: Vec<f64> = data
+        .iter()
+        .map(|&value| (value - mean_value).powi(2))
+        .collect();
+    mean(&squared_diffs).unwrap()
+}
+
 fn std_deviation(data: &[f64]) -> Option<f64> {
-    match (mean(data), data.len()) {
-        (Some(data_mean), count) if count > 0 => {
-            let variance = data
-                .iter()
-                .map(|value| {
-                    let diff = data_mean - (*value as f64);
-
-                    diff * diff
-                })
-                .sum::<f64>()
-                / count as f64;
-
-            Some(variance.sqrt())
-        }
-        _ => None,
-    }
+    Some(variance(data).sqrt())
 }
 
 fn standardize_salaries(dataset: &[SalaryRecord]) -> Vec<f64> {
