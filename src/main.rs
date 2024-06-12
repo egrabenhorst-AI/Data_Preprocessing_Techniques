@@ -33,7 +33,9 @@ fn main() {
                     // );
                     //let us_based_feature = create_us_based_feature(&dataset);
                     //println!("US-based feature: {:?}", us_based_feature);
-                    plot_histogram(&salaries, 50, "Salary Distribution in USD");
+                    let salary_data: Vec<f64> = dataset.iter().map(|record| 
+                        record.salary_in_usd).collect();
+                    plot_histogram(&salary_data, 50, "Salary Distribution in USD");
                 }
                 Err(error) => {
                     eprintln!("Error loading dataset: {}", error);
@@ -222,17 +224,37 @@ fn create_us_based_feature(dataset: &[SalaryRecord]) -> Vec<u8> {
         .collect()
 }
 
-use plotly::{Color, CommonMarker, Histogram, Layout, Plot};
+use plotly::{common::Marker, common::Title, Histogram, Layout, Plot};
 fn plot_histogram(data: &[f64], bins: usize, title: &str) {
     let trace = Histogram::new(data)
-        .nbinsx(bins)
+        .n_bins_x(bins)
         .name("Salary Distribution")
-        .marker(CommonMarker::new().color(Color::String("#1f77b4".to_owned())));
+        .marker(Marker::new().color("#1f77b4".to_owned()));
+    let title = Title::new(title);
     let layout = Layout::new().title(title);
     let mut plot = Plot::new();
     plot.add_trace(trace);
     plot.set_layout(layout);
     plot.show();
+}
+
+
+impl Default for SalaryRecord {
+    fn default() -> Self {
+        Self { 
+            work_year: Default::default(),
+            experience_level: Default::default() ,
+            employment_type: Default::default(),
+            job_title: Default::default(),
+            salary: Default::default(),
+            salary_currency: Default::default(),
+            salary_in_usd: Default::default(),
+            employee_residence: Default::default(),
+            remote_ratio: Default::default(),
+            company_location: Default::default(),
+            company_size: Default::default(),
+        }
+    }
 }
 
 #[derive(Debug)]
